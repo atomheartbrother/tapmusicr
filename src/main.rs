@@ -9,7 +9,6 @@ use chrono::{DateTime, Local};
 use reqwest::blocking::get;
 use clap::Arg;
 
-
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli: clap::ArgMatches = clap::Command::new("tapmusic-cli")
 
@@ -36,10 +35,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     .arg(
         Arg::new("directory")
             .value_parser(clap::value_parser!(PathBuf))
-            .help("directory where the collage will be saved at.")
+            .help("Directory where the collage will be saved at.")
             .required(true)
     )
-
+    
+    .arg(
+        Arg::new("filename")
+            .short('f')
+            .default_value("")
+            .help("Save collage under a custom file name.")
+    )
+    
     .arg(
         Arg::new("caption")
             .short('c')
@@ -53,14 +59,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             .short('p')
             .value_parser(["t", "f"])
             .default_value("t")
-            .help("Display album/artist playcount in collage")
-    )
-
-    .arg(
-        Arg::new("filename")
-            .short('f')
-            .default_value("")
-            .help("Save collage under a custom file name.")
+            .help("Display album/artist playcount in collage.")
     )
     .get_matches();
 
@@ -68,9 +67,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let size: &String = cli.get_one::<String>("size").expect("SIZE is required");
     let time: &String = cli.get_one::<String>("time").expect("TIME is required");
     let directory: &PathBuf = cli.get_one::<PathBuf>("directory").expect("DIRECTORY is required");
+    let mut filename: Option<&String> = cli.get_one::<String>("filename");
     let mut caption: Option<&String> = cli.get_one::<String>("caption");
     let mut playcount: Option<&String> = cli.get_one::<String>("playcount");
-    let mut filename: Option<&String> = cli.get_one::<String>("filename");
 
     let new_size: String = format!("{}x{}", size, size);
     let new_time: String = parse_time(time);
@@ -83,8 +82,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     directory.push(new_filename);
 
     if file_exists(&directory) == true {
-        
         process::exit(1);
+
     } else {
         _ = get_collage(&url, directory);
     }
@@ -92,12 +91,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     Ok(())
 }
 
-//Check if collage download path exists
-
+///Check if collage download path exists.
 fn file_exists(path: &PathBuf) -> bool {
     metadata(path).is_ok()
 }
 
+///Create default file name or parse user-provided file name. 
 fn parse_file_name(user: &str, size: &str, time: &str, filename: &str) -> String {
     if filename == "" {
         let now: DateTime<Local> = Local::now();
