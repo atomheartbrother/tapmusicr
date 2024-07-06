@@ -1,14 +1,14 @@
 use std::path::PathBuf;
-use std::fs;
+use std::fs::{File, metadata};
 use std::process;
-use core::result::Result;
 use std::error::Error;
-use std::fs::File;
 use std::io::Write;
-use reqwest::blocking::get;
-use clap::Arg;
+use core::result::Result;
 use bytes::Bytes;
 use chrono::{DateTime, Local};
+use reqwest::blocking::get;
+use clap::Arg;
+
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let cli: clap::ArgMatches = clap::Command::new("tapmusic-cli")
@@ -95,7 +95,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 //Check if collage download path exists
 
 fn file_exists(path: &PathBuf) -> bool {
-    fs::metadata(path).is_ok()
+    metadata(path).is_ok()
 }
 
 fn parse_file_name(user: &str, size: &str, time: &str, filename: &str) -> String {
