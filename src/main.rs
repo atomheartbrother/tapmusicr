@@ -63,6 +63,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )
     .get_matches();
 
+    //Parse cli arguments
     let user: &String = cli.get_one::<String>("user").expect("USER is required");
     let size: &String = cli.get_one::<String>("size").expect("SIZE is required");
     let time: &String = cli.get_one::<String>("time").expect("TIME is required");
@@ -71,14 +72,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut caption: Option<&String> = cli.get_one::<String>("caption");
     let mut playcount: Option<&String> = cli.get_one::<String>("playcount");
 
+    //Transform arguments for URL
     let new_size: String = format!("{}x{}", size, size);
     let new_time: String = parse_time(time);
-    let new_caption: String = str_to_bool(caption.take().unwrap());
-    let new_playcount: String = str_to_bool(playcount.take().unwrap());
+    let new_caption: String = char_to_str(caption.take().unwrap());
+    let new_playcount: String = char_to_str(playcount.take().unwrap());
 
+    //Build URL
     let url: String = build_url(user, &new_size, &new_time, &new_caption, &new_playcount);
+    
+    //Build file name and absolute file path
     let new_filename: String = parse_file_name(user, &new_size, &new_time, filename.take().unwrap());
-    let mut directory = directory.clone();
+    let mut directory: PathBuf = directory.clone();
     directory.push(new_filename);
 
     if file_exists(&directory) == true {
@@ -106,6 +111,7 @@ fn parse_file_name(user: &str, size: &str, time: &str, filename: &str) -> String
     }
 }
 
+///Parse time argument to prepare for URL building.
 fn parse_time(time: &str) -> String {
     match time.chars().last().unwrap() {
         'd' => format!("{}day", &time[..time.len() - 1]),
@@ -114,13 +120,15 @@ fn parse_time(time: &str) -> String {
     }
 }
 
-fn str_to_bool(s: &String) -> String {
+///Convert optional arguments from 't' & 'f' to "true" & "false".
+fn char_to_str(s: &String) -> String {
     match s.chars().last().unwrap() {
         't' => "true".to_string(),
         _ => "false".to_string(),
     }
 }
 
+///Build tapmusic URL using parsed arguments.
 fn build_url(user: &str, size: &str, time: &str, caption: &str, playcount: &str) -> String {
     let mut base_url: String = format!("https://tapmusic.net/collage.php?user={}&type={}&size={}", &user, &time, &size);
 
@@ -135,6 +143,7 @@ fn build_url(user: &str, size: &str, time: &str, caption: &str, playcount: &str)
     base_url
 }
 
+///Send request to URL, retrieve response, and write to output.
 fn get_collage(url: &str, file_path: PathBuf) -> Result<(), Box<dyn Error>> {
     let res: reqwest::blocking::Response = get(url)?;
 
@@ -147,6 +156,7 @@ fn get_collage(url: &str, file_path: PathBuf) -> Result<(), Box<dyn Error>> {
     }
 }
 
+///Write collage to output.
 fn write_collage(context: &Bytes, file_path: PathBuf) -> Result<(), Box<dyn Error>> {
     let mut file = File::create(file_path)?;
     file.write_all(context)?;
